@@ -12,7 +12,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <>
       <Sidebar />
-      <main className="ml-60 min-h-screen">
+      <main className="dash ml-60 min-h-screen">
         <div className="mx-auto max-w-7xl px-6 py-6">
           {children}
         </div>

@@ -15,9 +15,9 @@ interface UsageOverTimeProps {
 type MetricKey = 'messageCount' | 'sessionCount' | 'toolCallCount';
 
 const metrics: { key: MetricKey; label: string; color: string }[] = [
-  { key: 'messageCount', label: 'Messages', color: '#D4764E' },
-  { key: 'sessionCount', label: 'Sessions', color: '#6B8AE6' },
-  { key: 'toolCallCount', label: 'Tool Calls', color: '#5CB87A' },
+  { key: 'messageCount', label: 'Messages', color: 'var(--chart-1)' },
+  { key: 'sessionCount', label: 'Sessions', color: 'var(--chart-2)' },
+  { key: 'toolCallCount', label: 'Tool Calls', color: 'var(--chart-3)' },
 ];
 
 export function UsageOverTime({ data }: UsageOverTimeProps) {

@@ -11,7 +11,21 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'claude-sonnet-4-6': { inputPerMillion: 3, outputPerMillion: 15, cacheWritePerMillion: 3.75, cacheReadPerMillion: 0.30 },
   'claude-sonnet-4-5-20250929': { inputPerMillion: 3, outputPerMillion: 15, cacheWritePerMillion: 3.75, cacheReadPerMillion: 0.30 },
   'claude-haiku-4-5-20251001': { inputPerMillion: 0.80, outputPerMillion: 4, cacheWritePerMillion: 1.00, cacheReadPerMillion: 0.08 },
+  // OpenAI (Codex). Newer models without a published rate fall back to the latest known one.
+  'gpt-5': { inputPerMillion: 1.25, outputPerMillion: 10, cacheWritePerMillion: 1.25, cacheReadPerMillion: 0.125 },
+  'gpt-5-codex': { inputPerMillion: 1.25, outputPerMillion: 10, cacheWritePerMillion: 1.25, cacheReadPerMillion: 0.125 },
+  'gpt-5.1': { inputPerMillion: 1.25, outputPerMillion: 10, cacheWritePerMillion: 1.25, cacheReadPerMillion: 0.125 },
+  'gpt-5.1-codex': { inputPerMillion: 1.25, outputPerMillion: 10, cacheWritePerMillion: 1.25, cacheReadPerMillion: 0.125 },
+  'gpt-5.1-codex-max': { inputPerMillion: 1.25, outputPerMillion: 10, cacheWritePerMillion: 1.25, cacheReadPerMillion: 0.125 },
+  'gpt-5.1-codex-mini': { inputPerMillion: 0.25, outputPerMillion: 2, cacheWritePerMillion: 0.25, cacheReadPerMillion: 0.025 },
+  'gpt-5.2': { inputPerMillion: 1.75, outputPerMillion: 14, cacheWritePerMillion: 1.75, cacheReadPerMillion: 0.175 },
+  'gpt-5.2-codex': { inputPerMillion: 1.75, outputPerMillion: 14, cacheWritePerMillion: 1.75, cacheReadPerMillion: 0.175 },
+  'gpt-5.3-codex': { inputPerMillion: 1.75, outputPerMillion: 14, cacheWritePerMillion: 1.75, cacheReadPerMillion: 0.175 },
+  'gpt-5.4': { inputPerMillion: 2.50, outputPerMillion: 15, cacheWritePerMillion: 2.50, cacheReadPerMillion: 0.25 },
 };
+
+const OPENAI_FALLBACK = 'gpt-5.4';
+const OPENAI_MINI_FALLBACK = 'gpt-5.1-codex-mini';
 
 /**
  * Cost estimation modes:
@@ -56,18 +70,35 @@ const COST_MODE_MULTIPLIERS: Record<CostMode, { cacheWrite: number; cacheRead: n
 
 export const DEFAULT_COST_MODE: CostMode = 'subscription';
 
+const isOpenAI = (id: string) => /^(gpt|codex|o\d)/.test(id);
+
 export function getModelDisplayName(modelId: string): string {
+  if (isOpenAI(modelId)) {
+    return modelId
+      .replace(/^gpt-/, 'GPT-')
+      .split('-')
+      .map((w, i) => (i === 0 ? w : w.charAt(0).toUpperCase() + w.slice(1)))
+      .join(' ');
+  }
   if (modelId.includes('opus')) return 'Opus';
   if (modelId.includes('sonnet')) return 'Sonnet';
   if (modelId.includes('haiku')) return 'Haiku';
   return modelId;
 }
 
+// TokenMeter palette: one hue per model, never a vendor's brand colour.
+const OPENAI_COLORS = ['#3CC8E8', '#9E86FF', '#FF6E8E', '#4FD1A5', '#F2B84B', '#6F9BFF', '#C77DDB'];
+
 export function getModelColor(modelId: string): string {
-  if (modelId.includes('opus')) return '#D4764E';
-  if (modelId.includes('sonnet')) return '#6B8AE6';
-  if (modelId.includes('haiku')) return '#5CB87A';
-  return '#888888';
+  if (isOpenAI(modelId)) {
+    let h = 0;
+    for (const ch of modelId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+    return OPENAI_COLORS[h % OPENAI_COLORS.length];
+  }
+  if (modelId.includes('opus')) return '#C6F03A';
+  if (modelId.includes('sonnet')) return '#9AB8C8';
+  if (modelId.includes('haiku')) return '#E07FB0';
+  return '#8B94A1';
 }
 
 export function calculateCost(
@@ -115,6 +146,14 @@ export function calculateCostAllModes(
 }
 
 function findClosestPricing(model: string): ModelPricing | null {
+  if (isOpenAI(model)) {
+    let best = '';
+    for (const key of Object.keys(MODEL_PRICING)) {
+      if (model.startsWith(key) && key.length > best.length) best = key;
+    }
+    if (best) return MODEL_PRICING[best];
+    return MODEL_PRICING[model.includes('mini') ? OPENAI_MINI_FALLBACK : OPENAI_FALLBACK];
+  }
   for (const [key, pricing] of Object.entries(MODEL_PRICING)) {
     const family = key.includes('opus') ? 'opus' : key.includes('sonnet') ? 'sonnet' : 'haiku';
     if (model.includes(family)) return pricing;

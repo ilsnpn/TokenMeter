@@ -1,6 +1,8 @@
 // In-memory stand-ins for the few fs/path/os/readline calls the reader makes.
 // Everything lives in this browser tab: nothing is uploaded or persisted.
 
+import { convertCodexRollout } from './codex';
+
 export const CLAUDE_ROOT = '/claude';
 
 interface VFile {
@@ -16,10 +18,17 @@ const listeners = new Set<() => void>();
 // Only what the dashboard reads; credentials and settings are never touched.
 const KEEP = /(?:^|\/)((?:projects|plans|todos)\/.+|stats-cache\.json|history\.jsonl)$/;
 
+// Codex rollouts, converted to Claude's format on load (auth.json and the rest are skipped).
+const CODEX = /(?:^|\/)(?:archived_)?sessions\/(?:[^/]+\/)*(rollout-[^/]+\.jsonl)$/;
+const CODEX_PREFIX = 'codex/';
+
 /** Maps an arbitrary picked/zipped path to its path inside .claude, or null to skip it. */
 export function toClaudePath(rawPath: string): string | null {
-  const m = rawPath.replace(/\\/g, '/').match(KEEP);
-  return m ? m[1] : null;
+  const p = rawPath.replace(/\\/g, '/');
+  const m = p.match(KEEP);
+  if (m) return m[1];
+  const c = p.match(CODEX);
+  return c ? CODEX_PREFIX + c[1] : null;
 }
 
 export interface LoadInput {
@@ -35,9 +44,22 @@ export async function loadFiles(inputs: LoadInput[], onProgress: (done: number, 
   dirs.add(CLAUDE_ROOT);
   const total = inputs.reduce((s, f) => s + f.size, 0) || 1;
   let done = 0;
+  let painted = performance.now();
   for (const input of inputs) {
-    const full = `${CLAUDE_ROOT}/${input.path}`;
-    files.set(full, { text: await input.read(), mtimeMs: input.mtimeMs });
+    // Let the browser repaint now and then, or the progress ruler never moves on screen.
+    if (performance.now() - painted > 50) {
+      await new Promise(r => setTimeout(r, 0));
+      painted = performance.now();
+    }
+    let full = `${CLAUDE_ROOT}/${input.path}`;
+    let text = await input.read();
+    if (input.path.startsWith(CODEX_PREFIX)) {
+      const session = convertCodexRollout(text);
+      if (!session) { done += input.size; onProgress(done, total); continue; }
+      full = `${CLAUDE_ROOT}/projects/${session.projectId}/${session.sessionId}.jsonl`;
+      text = session.text;
+    }
+    files.set(full, { text, mtimeMs: input.mtimeMs });
     for (let d = path.dirname(full); d.length > CLAUDE_ROOT.length; d = path.dirname(d)) dirs.add(d);
     done += input.size;
     onProgress(done, total);

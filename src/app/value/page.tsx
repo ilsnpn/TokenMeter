@@ -76,7 +76,7 @@ export default function ValuePage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Value</h1>
-          <p className="text-sm text-muted-foreground">Ce que Claude Code a produit, et ce que cela aurait coûté</p>
+          <p className="text-sm text-muted-foreground">Ce que vos agents de code ont produit, et ce que cela aurait coûté</p>
         </div>
       </div>
 
@@ -171,7 +171,7 @@ export default function ValuePage() {
                 <p className="text-lg font-bold">{n(hoursSaved)} h</p>
               </div>
               <div className="rounded-lg bg-muted/60 p-3">
-                <p className="text-xs text-muted-foreground">Temps passé avec Claude</p>
+                <p className="text-xs text-muted-foreground">Temps passé avec l’agent</p>
                 <p className="text-lg font-bold">{n(v.activeHours)} h</p>
               </div>
             </div>

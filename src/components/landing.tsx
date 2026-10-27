@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import JSZip from 'jszip';
 import { FolderOpen, FileArchive, Github, UserX, HardDrive, Trash2, Code2 } from 'lucide-react';
 import { Logo } from '@/components/logo';
@@ -34,8 +34,18 @@ async function fromZip(file: File): Promise<LoadInput[]> {
   return inputs;
 }
 
+/** Lime highlighter stroke under a word, as on "mesuré". */
+function Mark({ children }: { children: ReactNode }) {
+  return (
+    <span className="relative whitespace-nowrap">
+      <span className="absolute inset-x-[-0.1em] bottom-[0.08em] h-[0.32em] bg-signal/70 dark:bg-signal/25" aria-hidden="true" />
+      <span className="relative">{children}</span>
+    </span>
+  );
+}
+
 const PROMISES = [
-  { icon: UserX, title: 'Anonyme', text: 'Aucun compte, aucune connexion. Vos identifiants Claude ne sont jamais lus.' },
+  { icon: UserX, title: 'Anonyme', text: 'Aucun compte, aucune connexion. Vos identifiants Claude ou Codex ne sont jamais lus.' },
   { icon: HardDrive, title: '100 % local', text: 'L’analyse tourne dans votre navigateur : rien n’est envoyé sur Internet.' },
   { icon: Trash2, title: 'Rien n’est conservé', text: 'Fermez l’onglet et tout disparaît. Aucun stockage, aucun cookie de suivi.' },
   { icon: Code2, title: 'Open source', text: 'Code ouvert, sous licence MIT : vous pouvez vérifier chaque promesse.' },
@@ -50,7 +60,7 @@ export function Landing() {
     setProgress(0);
     try {
       const inputs = await getInputs();
-      if (!inputs.length) throw new Error('Aucune donnée Claude Code trouvée. Choisissez bien le dossier .claude.');
+      if (!inputs.length) throw new Error('Aucune donnée Claude Code ou Codex trouvée. Choisissez le dossier .claude ou .codex, ou leur ZIP.');
       await loadFiles(inputs, (done, total) => setProgress(Math.round((done / total) * 100)));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Lecture impossible.');
@@ -63,60 +73,52 @@ export function Landing() {
 
   return (
     <div className="flex min-h-screen flex-col px-6 py-6 lg:h-screen lg:overflow-hidden">
-      {/* Intro: the mark draws itself, then the page fades in underneath. */}
-      <div className="intro-splash pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-background">
-        <Logo animated className="h-[31rem] w-[31rem] max-h-[78vh] max-w-[78vh]" />
-      </div>
-
-      {/* Loading: the big "C" fills up as files are read. */}
-      {busy && (
-        <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-6 bg-background/95 backdrop-blur-sm">
-          <Logo progress={progress! / 100} className="h-[39rem] w-[39rem] max-h-[65vh] max-w-[65vh]" />
-          <div className="text-center">
-            <p className="text-4xl font-bold tabular-nums tracking-tight">{progress} %</p>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {progress! < 100 ? 'Lecture de votre dossier…' : 'Analyse en cours…'}
-            </p>
-          </div>
-        </div>
-      )}
-
       <header className="flex items-center gap-2.5">
         <Logo />
-        <span className="text-sm font-semibold tracking-tight">Claud&apos;Ometer</span>
+        <span className="text-sm font-semibold tracking-tight">TokenMeter</span>
+        <span className="hidden font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground sm:inline">
+          / instrument de mesure pour agents de code
+        </span>
         <ThemeToggle className="ml-auto" />
       </header>
 
-      <main className="mx-auto grid w-full max-w-6xl flex-1 items-center gap-10 py-6 lg:grid-cols-[1fr_1.15fr]">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center gap-8 py-6">
+      <div className="tick-ruler h-4 w-full" aria-hidden="true" />
+      <main className="grid w-full items-center gap-10 lg:grid-cols-[1fr_1.15fr]">
         <section className="space-y-6">
-          <div className="space-y-3">
-            <h1 className="text-3xl font-bold tracking-tight lg:text-4xl">
-              Vos statistiques Claude Code, en un coup d&apos;œil.
+          <div className="space-y-4">
+            <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
+              Claude Code <span className="text-primary">●</span> Codex
+            </p>
+            <h1 className="text-4xl font-semibold leading-[1.05] tracking-[-0.035em] lg:text-[3.4rem]">
+              Chaque token,{' '}
+<Mark>mesuré.</Mark>
             </h1>
             <p className="text-muted-foreground">
               Sessions, tokens, coûts estimés, modèles utilisés et heures de pointe, calculés à partir
-              du dossier que Claude Code tient sur votre ordinateur.
+              des dossiers que Claude Code et Codex tiennent sur votre ordinateur.
             </p>
           </div>
 
           <ul className="grid grid-cols-2 gap-3">
             {PROMISES.map(({ icon: Icon, title, text }) => (
-              <li key={title} className="flex gap-3 rounded-xl border border-border bg-card/60 p-3">
+              <li key={title} className="flex gap-3 rounded-md border border-border bg-card/60 p-3">
                 <Icon className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
                 <div>
-                  <p className="text-base font-semibold leading-tight">{title}</p>
+                  <p className="text-base font-semibold leading-tight"><Mark>{title}</Mark></p>
                   <p className="mt-0.5 text-xs text-muted-foreground">{text}</p>
                 </div>
               </li>
             ))}
           </ul>
 
-          <div className="space-y-3 rounded-xl border border-border bg-card p-5">
+          <div className="space-y-3 rounded-md border border-border border-l-[3px] border-l-primary bg-card p-5">
             <p className="text-sm">
-              Chargez votre dossier <code className="rounded bg-muted px-1.5 py-0.5 text-xs">.claude</code>
+              Chargez votre dossier <code className="rounded bg-muted px-1.5 py-0.5 text-xs">.claude</code> ou{' '}
+              <code className="rounded bg-muted px-1.5 py-0.5 text-xs">.codex</code>
             </p>
             <p className="text-xs text-muted-foreground">
-              Windows : <code>%USERPROFILE%\.claude</code> · macOS / Linux : <code>~/.claude</code>
+              Windows : <code>%USERPROFILE%\.claude</code> ou <code>\.codex</code> · macOS / Linux : <code>~/.claude</code> ou <code>~/.codex</code>
             </p>
 
             {!busy && (
@@ -149,11 +151,30 @@ export function Landing() {
           </div>
         </section>
 
-        <figure className="hidden overflow-hidden rounded-xl border border-border shadow-2xl lg:block">
+        <figure className="hidden overflow-hidden rounded-md border border-border shadow-[0_30px_80px_-30px_rgb(0_0_0/0.45)] lg:block">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/apercu.png" alt="Aperçu du tableau de bord avec des données d'exemple" className="w-full" />
+          <img src="/apercu-light.png" alt="Aperçu du tableau de bord avec des données d'exemple" className="w-full dark:hidden" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/apercu-dark.png" alt="Aperçu du tableau de bord avec des données d'exemple" className="hidden w-full dark:block" />
         </figure>
       </main>
+
+      {/* The same ruler, always shown; it fills with lime while files are read. */}
+      <div role="progressbar" aria-label="Chargement" aria-valuenow={progress ?? 0} aria-valuemin={0} aria-valuemax={100}>
+        <div className="relative h-4 w-full">
+          <div className="tick-ruler absolute inset-0" />
+          <div className="tick-ruler tick-ruler-fill absolute inset-y-0 left-0" style={{ width: `${progress ?? 0}%` }} />
+        </div>
+        <div className="mt-2 flex h-4 items-baseline justify-between font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground">
+          {busy && (
+            <>
+              <span>{progress! < 100 ? 'Lecture de votre dossier' : 'Analyse en cours'}</span>
+              <span className="tabular-nums text-foreground">{progress} %</span>
+            </>
+          )}
+        </div>
+      </div>
+      </div>
 
       <footer className="text-center text-xs text-muted-foreground">
         Cette version en ligne repose sur{' '}

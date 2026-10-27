@@ -73,8 +73,8 @@ export function Sidebar() {
       <div className="flex h-14 items-center gap-2.5 border-b border-border px-5">
         <Logo />
         <div>
-          <h1 className="text-sm font-semibold tracking-tight">Claud&apos;Ometer</h1>
-          <p className="text-[10px] text-muted-foreground">Statistiques Claude Code</p>
+          <h1 className="text-sm font-semibold tracking-tight">TokenMeter</h1>
+          <p className="text-[10px] text-muted-foreground">Claude Code · Codex</p>
         </div>
       </div>
 
@@ -89,9 +89,9 @@ export function Sidebar() {
               href={item.href}
               aria-current={isActive}
               className={cn(
-                'relative flex items-center gap-3 overflow-hidden rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                'relative flex items-center gap-3 overflow-hidden rounded-md px-3 py-2 text-sm font-medium transition-colors',
                 isActive
-                  ? 'bg-primary/10 text-primary'
+                  ? 'bg-primary/10 text-foreground shadow-[inset_2px_0_0_var(--primary)] [&>svg]:text-primary'
                   : 'text-muted-foreground hover:bg-accent hover:text-foreground'
               )}
             >
@@ -99,7 +99,7 @@ export function Sidebar() {
               {item.label}
               {isActive && onHome && item.section && (
                 <span
-                  className="absolute bottom-0 left-0 h-0.5 bg-primary transition-[width] duration-150"
+                  className="absolute bottom-0 left-0 h-px bg-primary transition-[width] duration-150"
                   style={{ width: `${spy.progress * 100}%` }}
                 />
               )}

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getModelDisplayName, getModelColor } from '@/config/pricing';
 import { useCostMode } from '@/lib/cost-mode-context';
 import { MIN_DISPLAY_COST } from '@/lib/format';
+import { topWithOthers } from '@/lib/utils';
 import type { ModelUsage, CostEstimates } from '@/lib/claude-data/types';
 
 interface ModelBreakdownProps {
@@ -20,7 +21,7 @@ function formatTokens(n: number): string {
 
 export function ModelBreakdown({ data }: ModelBreakdownProps) {
   const { pickCost } = useCostMode();
-  const chartData = Object.entries(data).map(([model, usage]) => ({
+  const allModels = Object.entries(data).map(([model, usage]) => ({
     name: getModelDisplayName(model),
     model,
     tokens: usage.inputTokens + usage.outputTokens + usage.cacheReadInputTokens + usage.cacheCreationInputTokens,
@@ -31,6 +32,15 @@ export function ModelBreakdown({ data }: ModelBreakdownProps) {
     cacheRead: usage.cacheReadInputTokens,
     cacheWrite: usage.cacheCreationInputTokens,
   })).filter(m => m.cost >= MIN_DISPLAY_COST);
+  const chartData = topWithOthers(allModels, 4, (a, b) => ({
+    ...a,
+    tokens: a.tokens + b.tokens,
+    cost: a.cost + b.cost,
+    inputTokens: a.inputTokens + b.inputTokens,
+    outputTokens: a.outputTokens + b.outputTokens,
+    cacheRead: a.cacheRead + b.cacheRead,
+    cacheWrite: a.cacheWrite + b.cacheWrite,
+  }));
 
   const totalTokens = chartData.reduce((sum, d) => sum + d.tokens, 0);
 

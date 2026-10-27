@@ -7,6 +7,7 @@ import { StatCard } from '@/components/cards/stat-card';
 import { CostChart } from '@/components/charts/cost-chart';
 import { formatCostFull, formatTokens, formatTokensFull, MIN_DISPLAY_COST } from '@/lib/format';
 import { getModelDisplayName, getModelColor, MODEL_PRICING } from '@/config/pricing';
+import { topWithOthers } from '@/lib/utils';
 import { Coins, TrendingUp, Zap, Database, Info } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -71,7 +72,7 @@ export default function CostsPage() {
     }));
 
   // Model cost breakdown
-  const modelCosts = Object.entries(stats.modelUsage).map(([model, usage]) => ({
+  const allModelCosts = Object.entries(stats.modelUsage).map(([model, usage]) => ({
     name: getModelDisplayName(model),
     model,
     cost: pickCost(usage.estimatedCosts, usage.estimatedCost),
@@ -81,6 +82,17 @@ export default function CostsPage() {
     cacheRead: usage.cacheReadInputTokens,
     cacheWrite: usage.cacheCreationInputTokens,
   })).filter(m => m.cost >= MIN_DISPLAY_COST);
+  const modelCosts = topWithOthers(allModelCosts, 4, (a, b) => ({
+    ...a,
+    cost: a.cost + b.cost,
+    inputTokens: a.inputTokens + b.inputTokens,
+    outputTokens: a.outputTokens + b.outputTokens,
+    cacheRead: a.cacheRead + b.cacheRead,
+    cacheWrite: a.cacheWrite + b.cacheWrite,
+  }));
+  // Rates for the models actually used (falls back to the first few when none match).
+  const usedPricing = Object.entries(MODEL_PRICING).filter(([m]) => m in stats.modelUsage);
+  const pricingRows = (usedPricing.length ? usedPricing : Object.entries(MODEL_PRICING)).slice(0, 4);
 
   return (
     <div className="space-y-6">
@@ -259,7 +271,7 @@ export default function CostsPage() {
                 </tr>
               </thead>
               <tbody>
-                {Object.entries(MODEL_PRICING).slice(0, 3).map(([model, pricing]) => (
+                {pricingRows.map(([model, pricing]) => (
                   <tr key={model} className="border-b border-border/30">
                     <td className="py-2 font-medium">{getModelDisplayName(model)}</td>
                     <td className="py-2 text-right">${pricing.inputPerMillion}</td>

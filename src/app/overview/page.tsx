@@ -42,7 +42,7 @@ export default function DashboardPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Overview</h1>
-          <p className="text-sm text-muted-foreground">Your Claude Code usage at a glance</p>
+          <p className="text-sm text-muted-foreground">Your AI coding usage at a glance</p>
         </div>
         <CostModeSelector />
       </div>

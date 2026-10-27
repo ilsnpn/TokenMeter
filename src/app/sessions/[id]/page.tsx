@@ -4,6 +4,7 @@ import { use } from 'react';
 import { useSessionDetail } from '@/lib/hooks';
 import { useCostMode } from '@/lib/cost-mode-context';
 import { formatCost, formatDuration, formatTokens } from '@/lib/format';
+import { getModelDisplayName } from '@/config/pricing';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -145,14 +146,14 @@ export default function SessionDetailPage({ params }: { params: Promise<{ id: st
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-xs font-medium">
-                          {msg.role === 'user' ? 'You' : 'Claude'}
+                          {msg.role === 'user' ? 'You' : 'Assistant'}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
                           {format(new Date(msg.timestamp), 'h:mm:ss a')}
                         </span>
                         {msg.model && (
                           <Badge variant="secondary" className="text-[9px] px-1 py-0">
-                            {msg.model.includes('opus') ? 'Opus' : msg.model.includes('sonnet') ? 'Sonnet' : 'Haiku'}
+                            {getModelDisplayName(msg.model)}
                           </Badge>
                         )}
                         {msg.usage && (

@@ -108,13 +108,14 @@ export async function getValueStats(): Promise<ValueStats> {
             added = countLines(input.new_string);
             linesRemoved += countLines(input.old_string);
           }
-          if (c.name === 'MultiEdit' && Array.isArray(input.edits)) {
+          if ((c.name === 'MultiEdit' || c.name === 'apply_patch') && Array.isArray(input.edits)) {
             for (const e of input.edits as Record<string, unknown>[]) {
+              if (typeof e.file_path === 'string') files.add(e.file_path);
               added += countLines(e.new_string);
               linesRemoved += countLines(e.old_string);
             }
           }
-          if (c.name === 'Bash') commandsRun++;
+          if (c.name === 'Bash' || input.shell) commandsRun++;
           linesWritten += added;
           m.linesWritten += added;
         }
