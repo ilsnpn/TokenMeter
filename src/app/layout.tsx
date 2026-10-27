@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     ],
     apple: "/apple-touch-icon.png",
   },
-  description: "Mesurez votre usage de Claude Code et Codex, directement dans votre navigateur",
+  description: "Mesurez votre usage de Claude Code, Codex et Gemini CLI, directement dans votre navigateur",
 };
 
 export default function RootLayout({

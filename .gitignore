@@ -54,5 +54,6 @@ next-env.d.ts
 
 # Codex test data (contains auth tokens)
 .codex.zip
+.gemini.zip
 /.claude-tmp/
 /outils-tests/

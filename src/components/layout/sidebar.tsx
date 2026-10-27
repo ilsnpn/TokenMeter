@@ -74,7 +74,7 @@ export function Sidebar() {
         <Logo />
         <div>
           <h1 className="text-sm font-semibold tracking-tight">TokenMeter</h1>
-          <p className="text-[10px] text-muted-foreground">Claude Code · Codex</p>
+          <p className="text-[10px] text-muted-foreground">Claude Code · Codex · Gemini</p>
         </div>
       </div>
 

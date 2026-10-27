@@ -45,7 +45,7 @@ function Mark({ children }: { children: ReactNode }) {
 }
 
 const PROMISES = [
-  { icon: UserX, title: 'Anonyme', text: 'Aucun compte, aucune connexion. Vos identifiants Claude ou Codex ne sont jamais lus.' },
+  { icon: UserX, title: 'Anonyme', text: 'Aucun compte, aucune connexion. Vos identifiants Claude, Codex ou Gemini ne sont jamais lus.' },
   { icon: HardDrive, title: '100 % local', text: 'L’analyse tourne dans votre navigateur : rien n’est envoyé sur Internet.' },
   { icon: Trash2, title: 'Rien n’est conservé', text: 'Fermez l’onglet et tout disparaît. Aucun stockage, aucun cookie de suivi.' },
   { icon: Code2, title: 'Open source', text: 'Code ouvert, sous licence MIT : vous pouvez vérifier chaque promesse.' },
@@ -60,7 +60,7 @@ export function Landing() {
     setProgress(0);
     try {
       const inputs = await getInputs();
-      if (!inputs.length) throw new Error('Aucune donnée Claude Code ou Codex trouvée. Choisissez le dossier .claude ou .codex, ou leur ZIP.');
+      if (!inputs.length) throw new Error('Aucune donnée Claude Code, Codex ou Gemini CLI trouvée. Choisissez le dossier .claude, .codex ou .gemini, ou leur ZIP.');
       await loadFiles(inputs, (done, total) => setProgress(Math.round((done / total) * 100)));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Lecture impossible.');
@@ -88,7 +88,7 @@ export function Landing() {
         <section className="space-y-6">
           <div className="space-y-4">
             <p className="font-mono text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-              Claude Code <span className="text-primary">●</span> Codex
+              Claude Code <span className="text-primary">●</span> Codex <span className="text-primary">●</span> Gemini CLI
             </p>
             <h1 className="text-4xl font-semibold leading-[1.05] tracking-[-0.035em] lg:text-[3.4rem]">
               Chaque token,{' '}
@@ -96,7 +96,7 @@ export function Landing() {
             </h1>
             <p className="text-muted-foreground">
               Sessions, tokens, coûts estimés, modèles utilisés et heures de pointe, calculés à partir
-              des dossiers que Claude Code et Codex tiennent sur votre ordinateur.
+              des dossiers que Claude Code, Codex et Gemini CLI tiennent sur votre ordinateur.
             </p>
           </div>
 
@@ -114,11 +114,12 @@ export function Landing() {
 
           <div className="space-y-3 rounded-md border border-border border-l-[3px] border-l-primary bg-card p-5">
             <p className="text-sm">
-              Chargez votre dossier <code className="rounded bg-muted px-1.5 py-0.5 text-xs">.claude</code> ou{' '}
-              <code className="rounded bg-muted px-1.5 py-0.5 text-xs">.codex</code>
+              Chargez votre dossier <code className="rounded bg-muted px-1.5 py-0.5 text-xs">.claude</code>,{' '}
+              <code className="rounded bg-muted px-1.5 py-0.5 text-xs">.codex</code> ou{' '}
+              <code className="rounded bg-muted px-1.5 py-0.5 text-xs">.gemini</code>
             </p>
             <p className="text-xs text-muted-foreground">
-              Windows : <code>%USERPROFILE%\.claude</code> ou <code>\.codex</code> · macOS / Linux : <code>~/.claude</code> ou <code>~/.codex</code>
+              Windows : <code>%USERPROFILE%\.claude</code>, <code>\.codex</code> ou <code>\.gemini</code> · macOS / Linux : <code>~/.claude</code>, <code>~/.codex</code> ou <code>~/.gemini</code>
             </p>
 
             {!busy && (

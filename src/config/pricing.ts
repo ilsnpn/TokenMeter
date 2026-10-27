@@ -22,10 +22,18 @@ export const MODEL_PRICING: Record<string, ModelPricing> = {
   'gpt-5.2-codex': { inputPerMillion: 1.75, outputPerMillion: 14, cacheWritePerMillion: 1.75, cacheReadPerMillion: 0.175 },
   'gpt-5.3-codex': { inputPerMillion: 1.75, outputPerMillion: 14, cacheWritePerMillion: 1.75, cacheReadPerMillion: 0.175 },
   'gpt-5.4': { inputPerMillion: 2.50, outputPerMillion: 15, cacheWritePerMillion: 2.50, cacheReadPerMillion: 0.25 },
+  // Google (Gemini CLI), standard tier rates for prompts up to 200k tokens.
+  'gemini-2.5-pro': { inputPerMillion: 1.25, outputPerMillion: 10, cacheWritePerMillion: 1.25, cacheReadPerMillion: 0.125 },
+  'gemini-2.5-flash': { inputPerMillion: 0.30, outputPerMillion: 2.50, cacheWritePerMillion: 0.30, cacheReadPerMillion: 0.03 },
+  'gemini-2.5-flash-lite': { inputPerMillion: 0.10, outputPerMillion: 0.40, cacheWritePerMillion: 0.10, cacheReadPerMillion: 0.01 },
+  'gemini-3-pro': { inputPerMillion: 2, outputPerMillion: 12, cacheWritePerMillion: 2, cacheReadPerMillion: 0.20 },
+  'gemini-3-flash': { inputPerMillion: 0.50, outputPerMillion: 3, cacheWritePerMillion: 0.50, cacheReadPerMillion: 0.05 },
 };
 
 const OPENAI_FALLBACK = 'gpt-5.4';
 const OPENAI_MINI_FALLBACK = 'gpt-5.1-codex-mini';
+const GEMINI_FALLBACK = 'gemini-3-pro';
+const GEMINI_FLASH_FALLBACK = 'gemini-3-flash';
 
 /**
  * Cost estimation modes:
@@ -71,8 +79,16 @@ const COST_MODE_MULTIPLIERS: Record<CostMode, { cacheWrite: number; cacheRead: n
 export const DEFAULT_COST_MODE: CostMode = 'subscription';
 
 const isOpenAI = (id: string) => /^(gpt|codex|o\d)/.test(id);
+const isGemini = (id: string) => id.startsWith('gemini');
 
 export function getModelDisplayName(modelId: string): string {
+  if (isGemini(modelId)) {
+    return modelId
+      .replace(/-preview.*$/, '')
+      .split('-')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+  }
   if (isOpenAI(modelId)) {
     return modelId
       .replace(/^gpt-/, 'GPT-')
@@ -90,7 +106,7 @@ export function getModelDisplayName(modelId: string): string {
 const OPENAI_COLORS = ['#3CC8E8', '#9E86FF', '#FF6E8E', '#4FD1A5', '#F2B84B', '#6F9BFF', '#C77DDB'];
 
 export function getModelColor(modelId: string): string {
-  if (isOpenAI(modelId)) {
+  if (isOpenAI(modelId) || isGemini(modelId)) {
     let h = 0;
     for (const ch of modelId) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
     return OPENAI_COLORS[h % OPENAI_COLORS.length];
@@ -146,12 +162,13 @@ export function calculateCostAllModes(
 }
 
 function findClosestPricing(model: string): ModelPricing | null {
-  if (isOpenAI(model)) {
+  if (isOpenAI(model) || isGemini(model)) {
     let best = '';
     for (const key of Object.keys(MODEL_PRICING)) {
       if (model.startsWith(key) && key.length > best.length) best = key;
     }
     if (best) return MODEL_PRICING[best];
+    if (isGemini(model)) return MODEL_PRICING[model.includes('flash') ? GEMINI_FLASH_FALLBACK : GEMINI_FALLBACK];
     return MODEL_PRICING[model.includes('mini') ? OPENAI_MINI_FALLBACK : OPENAI_FALLBACK];
   }
   for (const [key, pricing] of Object.entries(MODEL_PRICING)) {

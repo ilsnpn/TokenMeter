@@ -2,6 +2,7 @@
 // Everything lives in this browser tab: nothing is uploaded or persisted.
 
 import { convertCodexRollout } from './codex';
+import { convertGeminiChat, geminiProjectLabel } from './gemini';
 
 export const CLAUDE_ROOT = '/claude';
 
@@ -22,13 +23,20 @@ const KEEP = /(?:^|\/)((?:projects|plans|todos)\/.+|stats-cache\.json|history\.j
 const CODEX = /(?:^|\/)(?:archived_)?sessions\/(?:[^/]+\/)*(rollout-[^/]+\.jsonl)$/;
 const CODEX_PREFIX = 'codex/';
 
+// Gemini CLI chats, and the file newer versions keep next to them with the project path.
+// (Antigravity's conversations are binary databases and are not read.)
+const GEMINI = /(?:^|\/)tmp\/([^/]+)\/(chats\/session-[^/]+\.json|\.project_root)$/;
+const GEMINI_PREFIX = 'gemini/';
+
 /** Maps an arbitrary picked/zipped path to its path inside .claude, or null to skip it. */
 export function toClaudePath(rawPath: string): string | null {
   const p = rawPath.replace(/\\/g, '/');
   const m = p.match(KEEP);
   if (m) return m[1];
   const c = p.match(CODEX);
-  return c ? CODEX_PREFIX + c[1] : null;
+  if (c) return CODEX_PREFIX + c[1];
+  const g = p.match(GEMINI);
+  return g ? `${GEMINI_PREFIX}${g[1]}/${g[2]}` : null;
 }
 
 export interface LoadInput {
@@ -45,6 +53,20 @@ export async function loadFiles(inputs: LoadInput[], onProgress: (done: number, 
   const total = inputs.reduce((s, f) => s + f.size, 0) || 1;
   let done = 0;
   let painted = performance.now();
+
+  // Project paths first, so every Gemini chat knows its project; chats in name (= time) order,
+  // since a resumed session continues in a new file under the same id.
+  const geminiRoots = new Map<string, string>();
+  for (const input of inputs) {
+    const root = input.path.match(/^gemini\/([^/]+)\/\.project_root$/);
+    if (root) geminiRoots.set(root[1], (await input.read()).trim().replace(/\\/g, '/'));
+  }
+  const isGemini = (i: LoadInput) => i.path.startsWith(GEMINI_PREFIX);
+  inputs = [
+    ...inputs.filter(i => !isGemini(i)),
+    ...inputs.filter(isGemini).sort((a, b) => a.path.localeCompare(b.path)),
+  ];
+
   for (const input of inputs) {
     // Let the browser repaint now and then, or the progress ruler never moves on screen.
     if (performance.now() - painted > 50) {
@@ -58,6 +80,16 @@ export async function loadFiles(inputs: LoadInput[], onProgress: (done: number, 
       if (!session) { done += input.size; onProgress(done, total); continue; }
       full = `${CLAUDE_ROOT}/projects/${session.projectId}/${session.sessionId}.jsonl`;
       text = session.text;
+    } else if (input.path.startsWith(GEMINI_PREFIX)) {
+      const dir = input.path.split('/')[1];
+      const session = input.path.endsWith('.project_root')
+        ? null
+        : convertGeminiChat(text, geminiRoots.get(dir) || geminiProjectLabel(dir));
+      if (!session) { done += input.size; onProgress(done, total); continue; }
+      full = `${CLAUDE_ROOT}/projects/${session.projectId}/${session.sessionId}.jsonl`;
+      const previous = files.get(full);
+      text = previous ? `${previous.text}
+${session.text}` : session.text;
     }
     files.set(full, { text, mtimeMs: input.mtimeMs });
     for (let d = path.dirname(full); d.length > CLAUDE_ROOT.length; d = path.dirname(d)) dirs.add(d);

@@ -103,8 +103,8 @@ export async function getValueStats(): Promise<ValueStats> {
           const input = c.input || {};
           if (typeof input.file_path === 'string') files.add(input.file_path);
           let added = 0;
-          if (c.name === 'Write') added = countLines(input.content);
-          if (c.name === 'Edit') {
+          if (c.name === 'Write' || c.name === 'write_file') added = countLines(input.content);
+          if (c.name === 'Edit' || c.name === 'replace') {
             added = countLines(input.new_string);
             linesRemoved += countLines(input.old_string);
           }
